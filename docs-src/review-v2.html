@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>مرور کامل پروژه Movie App - نسخه ۲</title>
+<style>
+@page { size: A4; margin: 18mm 15mm; }
+body { font-family: Tahoma, "Segoe UI", Arial, sans-serif; font-size: 11.5pt; line-height: 2; color: #1b1b1f; }
+h1 { font-size: 26pt; text-align: center; margin: 60mm 0 6mm; color: #4338ca; }
+.sub { text-align: center; color: #555; font-size: 13pt; }
+h2 { font-size: 18pt; color: #4338ca; border-bottom: 2px solid #4338ca; padding-bottom: 4px; margin-top: 0; page-break-before: always; }
+h3 { font-size: 13.5pt; color: #1e1b4b; margin: 18px 0 4px; }
+pre, code { direction: ltr; text-align: left; font-family: Consolas, "Courier New", monospace; }
+pre { background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 6px; padding: 8px 12px; font-size: 9.5pt; line-height: 1.55; white-space: pre-wrap; page-break-inside: avoid; }
+code { background: #eef2ff; padding: 0 4px; border-radius: 3px; font-size: 10pt; }
+pre code { background: none; padding: 0; }
+table { width: 100%; border-collapse: collapse; margin: 10px 0; page-break-inside: avoid; font-size: 10.5pt; }
+th, td { border: 1px solid #c7c7d1; padding: 4px 8px; text-align: right; vertical-align: top; line-height: 1.7; }
+th { background: #e0e7ff; }
+.box { border-right: 5px solid #4338ca; background: #eef2ff; padding: 6px 14px; margin: 12px 0; page-break-inside: avoid; }
+.ok { border-right-color: #15803d; background: #f0fdf4; }
+.bad { border-right-color: #b91c1c; background: #fef2f2; }
+.cover { page-break-after: always; }
+ul, ol { margin: 4px 0; }
+.toc li { margin: 2px 0; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+<h1>مرور کامل پروژه Movie App</h1>
+<p class="sub">نسخهٔ ۲، بعد از تکمیل پروژه</p>
+<p class="sub">React · Vite · React Router · Context · useEffect · TMDB API · CSS</p>
+<div class="box" style="margin-top:40mm">
+<b>تفاوت با نسخهٔ اول:</b> در نسخهٔ اول، صفحهٔ علاقه‌مندی‌ها خالی بود و چند باگ در کد وجود داشت. در این نسخه همهٔ آن‌ها رفع شده‌اند و پروژه کامل است. بخش ۸ نشان می‌دهد چه چیزی از نسخهٔ قبل تغییر کرد و چرا.
+</div>
+<h3>فهرست</h3>
+<ol class="toc">
+<li>نقشهٔ کلی و جریان اجرا</li>
+<li>بررسی فایل به فایل</li>
+<li>مفاهیم React که استفاده شد</li>
+<li>مفاهیم JavaScript که استفاده شد</li>
+<li>مفاهیم CSS که استفاده شد</li>
+<li>منطق برنامه به زبان الگوریتم</li>
+<li>باگ‌های رفع‌شده (قبل و بعد)</li>
+<li>موارد باقی‌مانده و پیشنهاد بعدی</li>
+<li>سؤال‌های مرور با پاسخ</li>
+<li>واژه‌نامه</li>
+</ol>
+</div>
+
+<h2>۱. نقشهٔ کلی و جریان اجرا</h2>
+<p>برنامه فیلم‌های محبوب را از سایت TMDB می‌گیرد و نشان می‌دهد. کاربر می‌تواند فیلم جستجو کند، با دکمهٔ ♥ آن را به علاقه‌مندی‌ها اضافه یا از آن حذف کند و لیست علاقه‌مندی‌ها را در صفحهٔ جدا ببیند. این لیست در مرورگر ذخیره می‌شود و با بستن و باز کردن سایت از بین نمی‌رود.</p>
+
+<h3>ساختار فایل‌ها</h3>
+<pre>project/
+├── index.html            تنها صفحهٔ HTML، شامل div#root
+├── .env                  کلید API (در git قرار نمی‌گیرد)
+├── .env.example          نمونهٔ .env بدون کلید واقعی
+├── package.json
+└── src/
+    ├── main.jsx          نقطهٔ شروع: Router + StrictMode
+    ├── App.jsx           Provider + NavBar + مسیرها
+    ├── context/
+    │   └── MovieContext.jsx   حافظهٔ مشترک علاقه‌مندی‌ها
+    ├── components/
+    │   ├── NavBar.jsx
+    │   └── MovieCard.jsx
+    ├── pages/
+    │   ├── Home.jsx
+    │   └── Favorites.jsx
+    ├── services/
+    │   └── api.js        ارتباط با TMDB
+    └── css/              استایل‌ها</pre>
+
+<table>
+<tr><th>لایه</th><th>نقش</th></tr>
+<tr><td><code>index.html</code></td><td>ظرف خالی که React داخلش برنامه را می‌سازد</td></tr>
+<tr><td><code>main.jsx</code></td><td>روشن کردن برنامه</td></tr>
+<tr><td><code>App.jsx</code></td><td>اسکلت: Provider، نوار بالا و تعیین صفحه بر اساس آدرس</td></tr>
+<tr><td><code>context/</code></td><td>داده‌ای که چند صفحه به آن نیاز دارند (علاقه‌مندی‌ها)</td></tr>
+<tr><td><code>pages/</code></td><td>هر صفحهٔ کامل</td></tr>
+<tr><td><code>components/</code></td><td>تکه‌های قابل استفادهٔ مجدد</td></tr>
+<tr><td><code>services/</code></td><td>صحبت با دنیای بیرون (API)</td></tr>
+<tr><td><code>css/</code></td><td>ظاهر</td></tr>
+</table>
+
+<h3>جریان اجرا از لحظهٔ باز شدن سایت</h3>
+<ol>
+<li>مرورگر <code>index.html</code> را باز می‌کند.</li>
+<li>تگ <code>script</code> فایل <code>main.jsx</code> را اجرا می‌کند.</li>
+<li><code>main.jsx</code> کامپوننت <code>App</code> را داخل <code>div#root</code> می‌گذارد، بین <code>StrictMode</code> و <code>BrowserRouter</code>.</li>
+<li><code>App</code> اجرا می‌شود. <code>MovieProvider</code> اول لیست علاقه‌مندی‌ها را از <code>localStorage</code> می‌خواند.</li>
+<li><code>NavBar</code> همیشه نمایش داده می‌شود. <code>Routes</code> آدرس را با <code>Route</code>ها مقایسه می‌کند: آدرس <code>/</code> صفحهٔ Home و آدرس <code>/favorites</code> صفحهٔ Favorites.</li>
+<li>Home بعد از اولین نمایش، فیلم‌های محبوب را از API می‌گیرد.</li>
+<li>هر بار state عوض شود، React صفحه را دوباره می‌سازد.</li>
+</ol>
+
+<h2>۲. بررسی فایل به فایل</h2>
+
+<h3>۲-۱. index.html</h3>
+<pre>&lt;div id="root"&gt;&lt;/div&gt;
+&lt;script type="module" src="/src/main.jsx"&gt;&lt;/script&gt;</pre>
+<p><code>div#root</code> خالی است چون React محتوای برنامه را با جاوااسکریپت داخلش می‌سازد. <code>type="module"</code> یعنی فایل می‌تواند <code>import</code> و <code>export</code> داشته باشد.</p>
+
+<h3>۲-۲. main.jsx</h3>
+<pre>createRoot(document.getElementById('root')).render(
+  &lt;StrictMode&gt;
+    &lt;BrowserRouter&gt; &lt;App /&gt; &lt;/BrowserRouter&gt;
+  &lt;/StrictMode&gt;,
+)</pre>
+<ul>
+<li><code>createRoot</code> عنصر <code>root</code> را به React می‌دهد.</li>
+<li><code>StrictMode</code> فقط در حالت توسعه اجرا می‌شود و مشکلات پنهان را با اجرای دوبارهٔ effectها نشان می‌دهد.</li>
+<li><code>BrowserRouter</code> باید بیرون <code>App</code> باشد، چون <code>Routes</code> و <code>Link</code> داخل <code>App</code> به آدرس فعلی نیاز دارند.</li>
+</ul>
+
+<h3>۲-۳. App.jsx</h3>
+<pre>&lt;MovieProvider&gt;
+  &lt;NavBar /&gt;
+  &lt;main className="main-content"&gt;
+    &lt;Routes&gt;
+      &lt;Route path="/" element={&lt;Home /&gt;} /&gt;
+      &lt;Route path="/favorites" element={&lt;Favorites /&gt;} /&gt;
+    &lt;/Routes&gt;
+  &lt;/main&gt;
+&lt;/MovieProvider&gt;</pre>
+<ul>
+<li><code>MovieProvider</code> همهٔ برنامه را در بر می‌گیرد تا هر کامپوننت داخلش به علاقه‌مندی‌ها دسترسی داشته باشد.</li>
+<li><code>NavBar</code> بیرون <code>Routes</code> است، پس در همهٔ صفحه‌ها ثابت می‌ماند و فقط <code>main</code> عوض می‌شود.</li>
+</ul>
+
+<h3>۲-۴. context/MovieContext.jsx (جدید)</h3>
+<pre>const MovieContext = createContext()
+export const useMovieContext = () =&gt; useContext(MovieContext)
+
+export const MovieProvider = ({ children }) =&gt; {
+  const [favorites, setFavorites] = useState(() =&gt; {
+    const storedFavs = localStorage.getItem("favorites")
+    return storedFavs ? JSON.parse(storedFavs) : []
+  })
+
+  useEffect(() =&gt; {
+    localStorage.setItem('favorites', JSON.stringify(favorites))
+  }, [favorites])
+
+  const addToFavorites = (movie) =&gt;
+    setFavorites(prev =&gt; [...prev, movie])
+  const removeFromFavorites = (movieId) =&gt;
+    setFavorites(prev =&gt; prev.filter(m =&gt; m.id !== movieId))
+  const isFavorite = (movieId) =&gt;
+    favorites.some(m =&gt; m.id === movieId)
+
+  const value = { favorites, addToFavorites, removeFromFavorites, isFavorite }
+  return &lt;MovieContext.Provider value={value}&gt;{children}&lt;/MovieContext.Provider&gt;
+}</pre>
+<p><b>منطق:</b></p>
+<ol>
+<li><code>useState</code> با تابع شروع می‌شود (lazy initial state): فقط یک بار، هنگام اولین رندر، از <code>localStorage</code> می‌خواند. اگر چیزی ذخیره نشده بود، آرایهٔ خالی می‌گذارد.</li>
+<li>هر بار <code>favorites</code> عوض شود، effect دوم آن را با <code>JSON.stringify</code> ذخیره می‌کند. <code>localStorage</code> فقط متن نگه می‌دارد، پس تبدیل لازم است.</li>
+<li><code>setFavorites(prev =&gt; ...)</code> از نسخهٔ قبلی state استفاده می‌کند و آرایهٔ جدید می‌سازد. آرایه را مستقیم تغییر نمی‌دهیم (immutability).</li>
+<li>مقدار <code>value</code> به Provider داده می‌شود. اگر <code>value</code> نباشد، <code>useMovieContext()</code> مقدار <code>undefined</code> برمی‌گرداند و برنامه می‌شکند.</li>
+</ol>
+<div class="box"><b>چرا Context؟</b> هر دو صفحه (Home و Favorites) و کامپوننت <code>MovieCard</code> به یک لیست نیاز دارند. بدون Context باید state را در <code>App</code> بسازیم و چند لایه props پاس بدهیم (prop drilling).</div>
+
+<h3>۲-۵. components/NavBar.jsx</h3>
+<p>دو <code>Link</code> به <code>/</code> و <code>/favorites</code>. <code>Link</code> آدرس را بدون بارگیری مجدد صفحه عوض می‌کند، برخلاف تگ <code>a</code>.</p>
+
+<h3>۲-۶. components/MovieCard.jsx</h3>
+<pre>const { isFavorite, addToFavorites, removeFromFavorites } = useMovieContext();
+const favorite = isFavorite(movie.id);
+
+function onFavoriteClick(e) {
+  e.preventDefault();
+  if (favorite) removeFromFavorites(movie.id);
+  else addToFavorites(movie);
+}</pre>
+<ul>
+<li>کارت <code>movie</code> را از props می‌گیرد. وضعیت علاقه‌مندی را از Context می‌پرسد.</li>
+<li>با کلیک، فیلم اگر علاقه‌مندی باشد حذف و در غیر این صورت اضافه می‌شود. بعد Context عوض می‌شود و همهٔ کارت‌ها دوباره رندر می‌شوند، پس رنگ ♥ خودکار عوض می‌شود.</li>
+<li>کلاس <code>active</code> فقط وقتی <code>favorite</code> درست باشد اضافه می‌شود: <code>`favorite-btn ${favorite ? "active" : ""}`</code>.</li>
+<li>اگر <code>poster_path</code> نداشته باشد، به‌جای عکس خراب، یک جعبهٔ «No poster» نشان داده می‌شود.</li>
+<li><code>movie.release_date?.split("-")[0]</code> فقط سال را برمی‌دارد. علامت <code>?.</code> از خطا هنگام نبودن تاریخ جلوگیری می‌کند.</li>
+</ul>
+
+<h3>۲-۷. pages/Home.jsx</h3>
+<p>چهار state دارد:</p>
+<table>
+<tr><th>state</th><th>مقدار اولیه</th><th>کار</th></tr>
+<tr><td><code>searchQuery</code></td><td><code>""</code></td><td>متن داخل input</td></tr>
+<tr><td><code>movies</code></td><td><code>[]</code></td><td>فیلم‌های نمایش‌داده‌شده</td></tr>
+<tr><td><code>error</code></td><td><code>null</code></td><td>پیام خطا</td></tr>
+<tr><td><code>loading</code></td><td><code>true</code></td><td>در حال بارگیری</td></tr>
+</table>
+<pre>useEffect(() =&gt; {
+  const loadPopularMovies = async () =&gt; {
+    try {
+      setMovies(await getPopularMovies());
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load Movies...");
+    } finally {
+      setLoading(false);
+    }
+  };
+  loadPopularMovies();
+}, []);</pre>
+<ul>
+<li>آرایهٔ وابستگی <code>[]</code> یعنی effect فقط یک بار، بعد از اولین نمایش اجرا شود.</li>
+<li><code>finally</code> تضمین می‌کند <code>loading</code> چه موفق چه ناموفق خاموش شود.</li>
+</ul>
+<pre>const handleSearch = async (e) =&gt; {
+  e.preventDefault();
+  if (!searchQuery.trim()) return;
+  if (loading) return;
+  setLoading(true);
+  setError(null);
+  try {
+    setMovies(await searchMovies(searchQuery));
+  } catch (err) {
+    console.error(err);
+    setError("Failed to search movies...");
+  } finally {
+    setLoading(false);
+  }
+};</pre>
+<p><b>چهار حالت نمایش:</b></p>
+<table>
+<tr><th>loading</th><th>error</th><th>movies</th><th>صفحه چه نشان می‌دهد</th></tr>
+<tr><td>true</td><td>هر چیزی</td><td>هر چیزی</td><td>«Loading...»</td></tr>
+<tr><td>false</td><td>null</td><td>پر</td><td>شبکهٔ فیلم‌ها</td></tr>
+<tr><td>false</td><td>پیام</td><td>هر چیزی</td><td>پیام خطا (و شبکهٔ فعلی)</td></tr>
+<tr><td>false</td><td>null</td><td>خالی</td><td>«No movies found» (جدید)</td></tr>
+</table>
+
+<h3>۲-۸. pages/Favorites.jsx</h3>
+<pre>const { favorites } = useMovieContext();
+if (favorites.length &gt; 0) { /* شبکهٔ کارت‌ها */ }
+return /* پیام «No Favorite Movie Yet» */;</pre>
+<p>از همان <code>MovieCard</code> استفاده می‌کند. چون وضعیت در Context است، با زدن ♥ روی یک کارت در این صفحه، همان لحظه از لیست حذف می‌شود.</p>
+
+<h3>۲-۹. services/api.js</h3>
+<pre>const API_KEY = import.meta.env.VITE_TMDB_KEY;
+const BASE_URL = "https://api.themoviedb.org/3";
+
+const fetchMovies = async (url) =&gt; {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error("Request failed: " + response.status);
+  const data = await response.json();
+  return data.results ?? [];
+};
+
+export const getPopularMovies = () =&gt;
+  fetchMovies(`${BASE_URL}/movie/popular?api_key=${API_KEY}`);
+export const searchMovies = (query) =&gt;
+  fetchMovies(`${BASE_URL}/search/movie?api_key=${API_KEY}&amp;query=${encodeURIComponent(query)}`);</pre>
+<ul>
+<li>کد fetch در فایل جدا است تا صفحه‌ها فقط با داده کار کنند و اگر API عوض شد، فقط یک فایل عوض شود.</li>
+<li><code>fetch</code> برای ۴۰۱ یا ۵۰۰ خطا نمی‌دهد. به همین دلیل <code>response.ok</code> دستی چک می‌شود.</li>
+<li><code>data.results ?? []</code> اگر نتیجه نبود، آرایهٔ خالی برمی‌گرداند تا <code>movies.map</code> نشکند.</li>
+<li><code>encodeURIComponent</code> نویسه‌های خاص متن جستجو (فاصله، <code>&amp;</code>) را برای آدرس ایمن می‌کند.</li>
+</ul>
+
+<h3>۲-۱۰. فایل .env</h3>
+<p>متغیرهای محیطی Vite باید با <code>VITE_</code> شروع شوند تا در کد قابل خواندن باشند. فایل <code>.env</code> در <code>.gitignore</code> است تا کلید روی GitHub نرود. بعد از تغییر <code>.env</code> سرور dev خودش دوباره راه‌اندازی می‌شود.</p>
+<div class="box bad"><b>هشدار:</b> هر چیزی که در کد فرانت‌اند باشد، برای کاربر قابل دیدن است (حتی از <code>.env</code>، چون در فایل ساخته‌شده قرار می‌گیرد). کلید TMDB برای این پروژه مشکلی ندارد، ولی برای کلیدهای حساس به بک‌اند نیاز دارید.</div>
+
+<h2>۳. مفاهیم React که استفاده شد</h2>
+<table>
+<tr><th>مفهوم</th><th>توضیح</th><th>کجا</th></tr>
+<tr><td>کامپوننت</td><td>تابعی که JSX برمی‌گرداند و می‌توان چندبار از آن استفاده کرد</td><td>همهٔ فایل‌ها</td></tr>
+<tr><td>JSX</td><td>نوشتن شبیه HTML داخل جاوااسکریپت. مرورگر نمی‌فهمد و Vite تبدیلش می‌کند</td><td>همهٔ فایل‌ها</td></tr>
+<tr><td>props</td><td>ورودی کامپوننت از والد. فقط خواندنی</td><td><code>MovieCard movie=...</code></td></tr>
+<tr><td>state</td><td>حافظهٔ کامپوننت. تغییرش رندر مجدد می‌سازد</td><td>Home، MovieContext</td></tr>
+<tr><td>useEffect</td><td>کار جانبی بعد از رندر (fetch، ذخیره)</td><td>Home، MovieContext</td></tr>
+<tr><td>Context</td><td>اشتراک داده بین کامپوننت‌ها بدون props</td><td>MovieContext</td></tr>
+<tr><td>Router</td><td>نمایش صفحه بر اساس آدرس</td><td>main.jsx، App.jsx</td></tr>
+<tr><td>Controlled input</td><td>مقدار input از state می‌آید و با <code>onChange</code> به‌روز می‌شود</td><td>فرم جستجو</td></tr>
+<tr><td>Conditional rendering</td><td>نمایش شرطی با <code>&amp;&amp;</code> و <code>? :</code></td><td>Home، Favorites</td></tr>
+<tr><td>لیست و key</td><td><code>map</code> برای ساخت کارت‌ها. <code>key</code> یعنی شناسهٔ یکتا برای هر آیتم</td><td><code>key={movie.id}</code></td></tr>
+<tr><td>Custom hook</td><td>تابع <code>useMovieContext</code> که <code>useContext</code> را پنهان می‌کند</td><td>MovieContext</td></tr>
+</table>
+<div class="box"><b>قانون state:</b> state را مستقیم تغییر نده. همیشه تابع set را صدا بزن و برای آرایه‌ها نسخهٔ جدید بساز (<code>[...prev, movie]</code> و <code>filter</code>). React فقط با صدا زدن تابع set متوجه تغییر می‌شود.</div>
+
+<h2>۴. مفاهیم JavaScript که استفاده شد</h2>
+<table>
+<tr><th>مفهوم</th><th>مثال از پروژه</th></tr>
+<tr><td>import / export</td><td><code>export const getPopularMovies</code> و <code>import { getPopularMovies }</code>. با export نام‌دار، اسم باید دقیقاً یکی باشد.</td></tr>
+<tr><td>async / await</td><td><code>await fetch(...)</code> داخل تابع <code>async</code></td></tr>
+<tr><td>try / catch / finally</td><td>مدیریت خطا و خاموش کردن loading</td></tr>
+<tr><td>Destructuring</td><td><code>const { favorites } = useMovieContext()</code></td></tr>
+<tr><td>Spread</td><td><code>[...prev, movie]</code></td></tr>
+<tr><td>filter / some / map</td><td>حذف، پرسیدن وجود، ساخت کارت</td></tr>
+<tr><td>Optional chaining <code>?.</code></td><td><code>movie.release_date?.split("-")[0]</code></td></tr>
+<tr><td>Nullish coalescing <code>??</code></td><td><code>data.results ?? []</code></td></tr>
+<tr><td>Template literal</td><td>`${BASE_URL}/movie/popular`</td></tr>
+<tr><td>JSON</td><td><code>JSON.stringify</code> و <code>JSON.parse</code> برای <code>localStorage</code></td></tr>
+<tr><td>localStorage</td><td>ذخیرهٔ متن در مرورگر که با بستن سایت از بین نمی‌رود</td></tr>
+</table>
+
+<h2>۵. مفاهیم CSS که استفاده شد</h2>
+<ul>
+<li><b>Flexbox:</b> چیدمان نوار بالا و فرم جستجو (<code>display: flex</code>).</li>
+<li><b>Grid:</b> <code>grid-template-columns: repeat(auto-fit, minmax(300px, 1fr))</code> هر ستون حداقل ۳۰۰ پیکسل است، به تعداد جا ستون می‌سازد و باقی فضا را مساوی تقسیم می‌کند.</li>
+<li><b>aspect-ratio:</b> <code>2/3</code> برای پوستر، تا اندازهٔ کارت‌ها یکدست باشد.</li>
+<li><b>position relative / absolute:</b> دکمهٔ ♥ روی پوستر قرار می‌گیرد.</li>
+<li><b>Media query:</b> <code>@media (max-width: 768px)</code> برای موبایل.</li>
+<li><b>@keyframes:</b> انیمیشن <code>fadeIn</code> برای کارت‌ها.</li>
+<li><b>تم تیره و روشن:</b> <code>prefers-color-scheme</code> در <code>index.css</code>.</li>
+</ul>
+<div class="box bad"><b>خطای رایج:</b> اسم کلاس در JSX باید دقیقاً با CSS یکی باشد. در نسخهٔ اول، <code>.favorites</code> روی تگ اشتباه بود و استایل اعمال نمی‌شد. حالا wrapper این کلاس را دارد.</div>
+
+<h2>۶. منطق برنامه به زبان الگوریتم</h2>
+<h3>الف) باز شدن سایت</h3>
+<ol>
+<li>مرورگر <code>index.html</code> را می‌گیرد و <code>main.jsx</code> را اجرا می‌کند.</li>
+<li>Provider لیست علاقه‌مندی‌ها را از <code>localStorage</code> می‌خواند.</li>
+<li>Router آدرس را می‌خواند و صفحه را انتخاب می‌کند.</li>
+<li>اگر صفحه Home است: <code>loading=true</code>، سپس فیلم‌های محبوب را بگیر. موفق: <code>movies</code> را پر کن. خطا: پیام بگذار. در هر دو حالت <code>loading=false</code>.</li>
+</ol>
+<h3>ب) جستجو</h3>
+<ol>
+<li>کاربر تایپ می‌کند و <code>searchQuery</code> با هر حرف به‌روز می‌شود.</li>
+<li>کاربر Enter یا دکمه را می‌زند و <code>handleSearch</code> اجرا می‌شود.</li>
+<li>اگر متن خالی یا در حال بارگیری است: خروج.</li>
+<li><code>loading=true</code> و <code>error=null</code>. نتیجه را از API بگیر و <code>movies</code> را عوض کن. خطا: <code>error</code> را بگذار. در پایان <code>loading=false</code>.</li>
+</ol>
+<h3>ج) علاقه‌مندی</h3>
+<ol>
+<li>کاربر ♥ را روی کارت می‌زند.</li>
+<li>اگر فیلم در لیست است، حذفش کن؛ در غیر این صورت اضافه‌اش کن.</li>
+<li><code>favorites</code> عوض می‌شود، پس همهٔ کارت‌های وابسته دوباره رندر می‌شوند.</li>
+<li>effect لیست جدید را در <code>localStorage</code> ذخیره می‌کند.</li>
+<li>با ریلود، مرحلهٔ ۲ بخش (الف) لیست را برمی‌گرداند.</li>
+</ol>
+<h3>د) ناوبری</h3>
+<ol>
+<li>کاربر روی Favorites کلیک می‌کند و <code>Link</code> جلوی بارگیری مجدد را می‌گیرد.</li>
+<li>آدرس به <code>/favorites</code> عوض می‌شود و <code>Routes</code> صفحهٔ Favorites را نشان می‌دهد.</li>
+<li>NavBar تغییر نمی‌کند، چون بیرون <code>Routes</code> است.</li>
+</ol>
+<div class="box"><b>نکتهٔ جالب:</b> در نسخهٔ اول، وقتی از Home به Favorites و برمی‌گشتی، متن جستجو پاک می‌شد چون state صفحه با خارج شدن از بین می‌رود. این هنوز هم صادق است: متن جستجو و نتیجهٔ جستجو state محلی Home هستند. علاقه‌مندی‌ها چون در Context هستند، از بین نمی‌روند.</div>
+
+<h2>۷. باگ‌های رفع‌شده (قبل و بعد)</h2>
+
+<h3>۱. غلط املایی satError (Home.jsx)</h3>
+<pre>// قبل
+satError("Failed to search movies...");
+// بعد
+setError("Failed to search movies...");</pre>
+<p>قبل از رفع، هنگام خطا یک <code>ReferenceError</code> می‌آمد و کاربر پیامی نمی‌دید. <b>درس:</b> غلط‌های املایی در اسم متغیر شایع‌ترین خطا هستند. از F2 برای تغییر نام و از lint استفاده کن.</p>
+
+<h3>۲. چک نشدن response.ok (api.js)</h3>
+<pre>// قبل
+const data = await response.json();
+return data.results;
+// بعد
+if (!response.ok) throw new Error("Request failed: " + response.status);
+return data.results ?? [];</pre>
+<p>fetch برای ۴۰۱ یا ۵۰۰ خطا نمی‌داد. <code>data.results</code> می‌شد <code>undefined</code> و <code>movies.map</code> صفحه را سفید می‌کرد.</p>
+
+<h3>۳. کلید API داخل کد</h3>
+<p>قبل: <code>const API_Key = "..."</code> داخل <code>api.js</code>. بعد: <code>import.meta.env.VITE_TMDB_KEY</code> و فایل <code>.env</code> که در <code>.gitignore</code> است. اسم ثابت هم به <code>API_KEY</code> تغییر کرد.</p>
+<div class="box bad">چون کلید قبلاً در کد و تاریخچهٔ git بوده، اگر پروژه را عمومی کردی، در TMDB یک کلید جدید بساز.</div>
+
+<h3>۴. صفحهٔ Favorites همیشه لیست نشان می‌داد</h3>
+<pre>// قبل: آرایه (حتی خالی) همیشه true است
+if (favorites) { ... }
+// بعد
+if (favorites.length &gt; 0) { ... }</pre>
+
+<h3>۵. خطای قدیمی پاک نمی‌شد</h3>
+<p><code>setError(null)</code> از بعد از موفقیت به ابتدای جستجو رفت تا پیام قبلی هنگام درخواست جدید نماند.</p>
+
+<h3>۶. فیلم بدون پوستر</h3>
+<p>شرط روی <code>poster_path</code> اضافه شد تا به‌جای آدرس خراب (<code>.../w500null</code>)، جایگزین نشان داده شود.</p>
+
+<h3>۷. حالت خالی جستجو</h3>
+<p>اگر جستجو هیچ نتیجه‌ای نداشت، صفحهٔ خالی دیده می‌شد. حالا «No movies found» نمایش داده می‌شود.</p>
+
+<h3>۸. دکمهٔ علاقه‌مندی و Context</h3>
+<p>دکمه قبلاً فقط <code>alert</code> بود. حالا به Context وصل است. در <code>MovieContext.jsx</code> چند خطا هم رفع شد: نبود <code>=&gt;</code> در تعریف تابع، اسم setter اشتباه (<code>setFavorite</code> به‌جای <code>setFavorites</code>)، assign شدن به setter به‌جای صدا زدن، <code>Provider</code> با حرف کوچک و نبود <code>value</code>.</p>
+
+<h3>۹. هشدار lint: setState در effect</h3>
+<p>خواندن از <code>localStorage</code> از effect به <code>useState(() =&gt; ...)</code> منتقل شد تا رندر اضافه ایجاد نشود.</p>
+
+<h3>۱۰. تمیزکاری</h3>
+<p><code>console.log</code> برای خطا به <code>console.error</code> تغییر کرد و <code>import React</code> اضافه در NavBar حذف شد.</p>
+
+<h2>۸. موارد باقی‌مانده و پیشنهاد بعدی</h2>
+<table>
+<tr><th>مورد</th><th>توضیح</th></tr>
+<tr><td>هشدار only-export-components</td><td><code>MovieContext.jsx</code> هم هوک و هم کامپوننت export می‌کند. فقط روی Fast Refresh اثر دارد. راه‌حل: هوک را به فایل جدا ببر.</td></tr>
+<tr><td>صفحهٔ ۴۰۴</td><td>هنوز <code>Route path="*"</code> نداریم. آدرس نامعتبر صفحهٔ خالی نشان می‌دهد.</td></tr>
+<tr><td>حفظ جستجو</td><td>متن جستجو با رفتن به صفحهٔ دیگر پاک می‌شود. برای نگه داشتنش، state را به Context ببر.</td></tr>
+<tr><td>صفحه‌بندی</td><td>API فقط صفحهٔ اول نتایج را برمی‌گرداند. پارامتر <code>page</code> را می‌توان اضافه کرد.</td></tr>
+<tr><td>debounce</td><td>جستجو فقط با Enter است. جستجوی زنده نیازمند تأخیر کوتاه برای کم کردن درخواست‌هاست.</td></tr>
+<tr><td>تست</td><td>برای <code>api.js</code> و <code>MovieContext</code> می‌توان تست نوشت.</td></tr>
+<tr><td>Deploy</td><td>برای انتشار روی Netlify یا Vercel، متغیر <code>VITE_TMDB_KEY</code> را در تنظیمات همان سرویس بگذار.</td></tr>
+</table>
+
+<h2>۹. سؤال‌های مرور با پاسخ</h2>
+<ol>
+<li><b>چرا <code>div#root</code> خالی است؟</b> چون React محتوای برنامه را با جاوااسکریپت داخلش می‌سازد.</li>
+<li><b>تفاوت Link و a؟</b> <code>Link</code> فقط آدرس را عوض می‌کند و React محتوا را عوض می‌کند. <code>a</code> کل صفحه را از سرور دوباره می‌گیرد.</li>
+<li><b>چرا BrowserRouter بیرون App است؟</b> چون <code>Link</code> و <code>Routes</code> داخل <code>App</code> به Router نیاز دارند.</li>
+<li><b>props و state؟</b> props ورودی از والد و فقط خواندنی است. state حافظهٔ خود کامپوننت است و تغییرش رندر مجدد می‌سازد.</li>
+<li><b>چرا <code>useState([])</code> و نه <code>null</code>؟</b> <code>[].map</code> کار می‌کند ولی <code>null.map</code> خطا می‌دهد.</li>
+<li><b>آرایهٔ <code>[]</code> در useEffect؟</b> effect فقط یک بار بعد از اولین نمایش اجرا شود.</li>
+<li><b>چرا <code>setLoading(false)</code> در finally؟</b> تا چه موفق چه ناموفق، loading خاموش شود.</li>
+<li><b>چرا <code>e.preventDefault()</code>؟</b> فرم نباید صفحه را reload کند، چون state از دست می‌رود.</li>
+<li><b>key برای چیست؟</b> تا React هر آیتم لیست را شناسایی و تغییرات را بهینه اعمال کند.</li>
+<li><b>چرا نباید state را مستقیم عوض کرد؟</b> React فقط با صدا زدن set متوجه تغییر می‌شود.</li>
+<li><b>چرا Context؟</b> برای اینکه Home، Favorites و MovieCard لیست مشترک داشته باشند، بدون prop drilling.</li>
+<li><b>چرا <code>JSON.stringify</code>؟</b> چون <code>localStorage</code> فقط متن نگه می‌دارد.</li>
+<li><b>چرا state اولیه تابع است؟</b> تا خواندن از <code>localStorage</code> فقط یک بار، در اولین رندر انجام شود، نه هر رندر.</li>
+<li><b>اگر fetch پاسخ ۴۰۱ بدهد چه می‌شود؟</b> خطا نمی‌دهد. به همین دلیل <code>response.ok</code> را چک می‌کنیم.</li>
+<li><b>چرا در StrictMode درخواست دو بار می‌رود؟</b> فقط در توسعه، برای نشان دادن مشکلات پنهان. در build نهایی یک بار است.</li>
+<li><b>چرا NavBar بیرون Routes است؟</b> تا در همهٔ صفحه‌ها ثابت بماند.</li>
+<li><b>چرا کد fetch در <code>api.js</code> است؟</b> برای جداسازی مسئولیت‌ها، استفادهٔ مجدد و تغییر راحت‌تر API.</li>
+<li><b>چرا <code>.env</code> باید <code>VITE_</code> داشته باشد؟</b> فقط متغیرهای با این پیشوند در کد فرانت‌اند در دسترس قرار می‌گیرند.</li>
+</ol>
+
+<h2>۱۰. واژه‌نامه</h2>
+<table>
+<tr><th>اصطلاح</th><th>معنی</th></tr>
+<tr><td>Component</td><td>تابعی که JSX برمی‌گرداند</td></tr>
+<tr><td>JSX</td><td>نوشتن شبیه HTML داخل جاوااسکریپت</td></tr>
+<tr><td>Props</td><td>ورودی‌های کامپوننت از والد</td></tr>
+<tr><td>State</td><td>حافظهٔ کامپوننت که تغییرش رندر مجدد می‌سازد</td></tr>
+<tr><td>Hook</td><td>تابع ویژهٔ React که با <code>use</code> شروع می‌شود</td></tr>
+<tr><td>Effect</td><td>کار جانبی بعد از رندر</td></tr>
+<tr><td>Context</td><td>مکانیزم اشتراک داده بین کامپوننت‌ها بدون props</td></tr>
+<tr><td>Provider</td><td>کامپوننتی که مقدار Context را در اختیار فرزندانش می‌گذارد</td></tr>
+<tr><td>Prop drilling</td><td>پاس دادن props از چند لایه فقط برای رساندن به فرزند عمیق</td></tr>
+<tr><td>Lazy initial state</td><td>دادن تابع به <code>useState</code> تا فقط یک بار اجرا شود</td></tr>
+<tr><td>Dependency array</td><td>فهرست مقادیری که تعیین می‌کنند effect کی اجرا شود</td></tr>
+<tr><td>Controlled input</td><td>input که مقدارش از state می‌آید</td></tr>
+<tr><td>Router</td><td>نمایش صفحه بر اساس آدرس</td></tr>
+<tr><td>SPA</td><td>برنامهٔ تک‌صفحه‌ای بدون بارگیری مجدد کامل</td></tr>
+<tr><td>Immutability</td><td>تغییر ندادن داده‌ی قبلی و ساختن نسخهٔ جدید</td></tr>
+<tr><td>API / Endpoint</td><td>رابط ارتباط برنامه‌ها / یک آدرس مشخص از آن</td></tr>
+<tr><td>JSON</td><td>قالب متنی برای تبادل داده</td></tr>
+<tr><td>localStorage</td><td>حافظهٔ متنی مرورگر که ماندگار است</td></tr>
+<tr><td>Environment variable</td><td>مقدار تنظیماتی خارج از کد، مثل کلید API</td></tr>
+<tr><td>Empty state</td><td>نمایش مناسب وقتی داده‌ای نیست</td></tr>
+<tr><td>Optional chaining</td><td><code>?.</code> برای جلوگیری از خطا روی مقدار تعریف‌نشده</td></tr>
+<tr><td>Bundler</td><td>ابزار تبدیل و فشرده‌سازی کد (Vite)</td></tr>
+</table>
+<div class="box ok"><b>تمرین نهایی:</b> بدون نگاه به این سند، مسیر «باز شدن سایت تا اضافه کردن یک فیلم به علاقه‌مندی‌ها و ماندنش بعد از ریلود» را با زبان خودت توضیح بده. بعد سؤال‌های بخش ۹ را جواب بده. هر جا گیر کردی، به همان بخش برگرد.</div>
+
+</body>
+</html>
